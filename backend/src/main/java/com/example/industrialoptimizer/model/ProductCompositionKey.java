@@ -13,6 +13,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Embeddable 
 
+
 public class ProductCompositionKey implements Serializable {
 
     @Column(name = "product_id")
@@ -23,3 +24,4 @@ public class ProductCompositionKey implements Serializable {
 
     // O @Data do Lombok já cria o equals() e hashCode() para mim não preciso colocar 
 }
+

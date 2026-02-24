@@ -1,30 +1,40 @@
 package com.example.industrialoptimizer.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 
 @Data
 @Entity
 @Table(name = "raw_materials")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RawMaterial {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false)
+    @NotBlank(message = "Raw material code cannot be blank")
     private String code;
 
     @Column(nullable = false)
+    @NotBlank(message = "Raw material name cannot be blank")
     private String name;
 
     @Column(name = "stock_quantity", precision = 15, scale = 3)
+    @NotNull(message = "Stock quantity cannot be null")
+    @PositiveOrZero(message = "Stock quantity cannot be negative")
     private BigDecimal stockQuantity;
 
     @Column(name = "unit_measure")
+    @NotBlank(message = "Unit measure cannot be blank")
     private String unitMeasure;
 
     @Column(name = "unit_cost", precision = 15, scale = 2)
+    @NotNull(message = "Unit cost cannot be null")
+    @PositiveOrZero(message = "Unit cost cannot be negative")
     private BigDecimal unitCost;
 
     // Getters and Setters

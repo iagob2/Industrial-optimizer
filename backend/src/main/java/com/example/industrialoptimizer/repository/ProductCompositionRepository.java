@@ -14,4 +14,13 @@ public interface ProductCompositionRepository extends JpaRepository<ProductCompo
 
     @Query("SELECT c FROM ProductComposition c WHERE c.id.productId = :productId ORDER BY c.id.rawMaterialId")
     List<ProductComposition> findByProductId(@Param("productId") Long productId);
+
+    /**
+     * Count ProductComposition records referencing a specific RawMaterial.
+     * Used in Scenario 4: Cascade Deletion Prevention
+     *
+     * @param rawMaterialId the ID of the RawMaterial
+     * @return count of ProductComposition records using this RawMaterial
+     */
+    long countByRawMaterialId(Long rawMaterialId);
 }
