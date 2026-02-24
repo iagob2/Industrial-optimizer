@@ -1,5 +1,6 @@
 package com.example.industrialoptimizer.service;
 
+import com.example.industrialoptimizer.dto.ProductCompositionDTO;
 import com.example.industrialoptimizer.model.Product;
 import com.example.industrialoptimizer.model.ProductComposition;
 import com.example.industrialoptimizer.model.ProductCompositionKey;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductCompositionService {
@@ -22,8 +24,8 @@ public class ProductCompositionService {
     private final RawMaterialRepository rawMaterialRepository;
 
     public ProductCompositionService(ProductCompositionRepository compositionRepository,
-                                    ProductRepository productRepository,
-                                    RawMaterialRepository rawMaterialRepository) {
+            ProductRepository productRepository,
+            RawMaterialRepository rawMaterialRepository) {
         this.compositionRepository = compositionRepository;
         this.productRepository = productRepository;
         this.rawMaterialRepository = rawMaterialRepository;
@@ -33,11 +35,47 @@ public class ProductCompositionService {
         return compositionRepository.findByProductId(productId);
     }
 
+    /**
+     * Retorna composições com informações completas da matéria-prima para o
+     * frontend.
+     * Evita serialização circular ao incluir apenas os dados necessários.
+     */
+    public List<ProductCompositionDTO> findByProductIdWithDetails(Long productId) {
+        return compositionRepository.findByProductId(productId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Converte ProductComposition para ProductCompositionDTO com detalhes da
+     * matéria-prima.
+     */
+    private ProductCompositionDTO mapToDTO(ProductComposition comp) {
+        // Defensive mapping: evita NullPointerException e mantém o contrato do DTO “achatado”.
+        BigDecimal qty = comp.getQuantityNeeded() != null ? comp.getQuantityNeeded() : BigDecimal.ZERO;
+        RawMaterial rm = comp.getRawMaterial();
+        BigDecimal unitCost = (rm != null && rm.getUnitCost() != null) ? rm.getUnitCost() : BigDecimal.ZERO;
+        BigDecimal totalCost = qty.multiply(unitCost);
+
+        return new ProductCompositionDTO(
+                comp.getId() != null ? comp.getId().getProductId() : null,
+                comp.getId() != null ? comp.getId().getRawMaterialId() : null,
+                rm != null ? rm.getCode() : null,
+                rm != null ? rm.getName() : null,
+                rm != null ? rm.getUnitMeasure() : null,
+                rm != null ? rm.getUnitCost() : null,
+                qty,
+                totalCost);
+    }
+
     public ProductComposition create(Long productId, Long rawMaterialId, BigDecimal quantityNeeded) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado: " + productId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Produto não encontrado: " + productId));
         RawMaterial rawMaterial = rawMaterialRepository.findById(rawMaterialId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Insumo não encontrado: " + rawMaterialId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Insumo não encontrado: " + rawMaterialId));
 
         ProductCompositionKey key = new ProductCompositionKey(productId, rawMaterialId);
         if (compositionRepository.existsById(key)) {

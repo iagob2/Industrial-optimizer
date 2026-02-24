@@ -1,6 +1,6 @@
 # Industrial Production Optimizer
 
-🌎 English | [🇧🇷 Português](./README-pt.md)
+🌎 English | [🇧🇷 Português](./READMEo_pt.md)
 
 Production planning playground for a furniture factory.  
 This project demonstrates how to maximize profit given limited raw material stock using a greedy optimization algorithm, implemented with **Spring Boot** and **Vue 3**.
@@ -33,11 +33,11 @@ Deep-dive documentation lives in [`/docs`](./docs).
 
 | Optimization | Products |
 |---|---|
-| ![Optimization Screen](./docs/images/Industrial_Optimizer.png) | ![Products Screen](./docs/images/produtos.png) |
+| ![Optimization Screen](./docs/imagens/Industrial_Optimizer.pdf) | ![Products Screen](./docs/imagens/produtos.pdf) |
 
 | Raw Materials | Composition |
 |---|---|
-| ![Raw Materials Screen](./docs/images/insumos.png) | ![Composition Screen](./docs/images/composição_dos_produtos.png) |
+| ![Raw Materials Screen](./docs/imagens/insumos.pdf) | ![Composition Screen](./docs/imagens/composição_dos_produtos.pdf) |
 
 ---
 

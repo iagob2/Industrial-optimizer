@@ -1,9 +1,11 @@
 package com.example.industrialoptimizer.controller;
 
+import com.example.industrialoptimizer.dto.ProductCompositionDTO;
 import com.example.industrialoptimizer.model.ProductComposition;
 import com.example.industrialoptimizer.service.ProductCompositionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,9 +22,22 @@ public class ProductCompositionController {
         this.service = service;
     }
 
+    /**
+     * GET /api/product-compositions?productId=1
+     * Retorna todas as composições de um produto com detalhes da matéria-prima.
+     * 
+     * @param productId ID do produto (obrigatório)
+     * @return Lista de composições com informações da matéria-prima
+     */
     @GetMapping
-    public List<ProductComposition> listByProduct(@RequestParam Long productId) {
-        return service.findByProductId(productId);
+    public List<ProductCompositionDTO> listByProduct(@RequestParam(required = true) Long productId) {
+        if (productId == null || productId <= 0) {
+            throw new ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,
+                "productId é obrigatório e deve ser maior que 0"
+            );
+        }
+        return service.findByProductIdWithDetails(productId);
     }
 
     @PostMapping
@@ -36,8 +51,8 @@ public class ProductCompositionController {
 
     @PutMapping("/{productId}/{rawMaterialId}")
     public ProductComposition update(@PathVariable Long productId,
-                                     @PathVariable Long rawMaterialId,
-                                     @RequestBody Map<String, Object> body) {
+            @PathVariable Long rawMaterialId,
+            @RequestBody Map<String, Object> body) {
         BigDecimal quantityNeeded = decimalFrom(body.get("quantityNeeded"));
         return service.update(productId, rawMaterialId, quantityNeeded);
     }
@@ -49,15 +64,20 @@ public class ProductCompositionController {
     }
 
     private static Long longFrom(Object o) {
-        if (o == null) return null;
-        if (o instanceof Number) return ((Number) o).longValue();
+        if (o == null)
+            return null;
+        if (o instanceof Number)
+            return ((Number) o).longValue();
         return Long.parseLong(o.toString());
     }
 
     private static BigDecimal decimalFrom(Object o) {
-        if (o == null) return BigDecimal.ZERO;
-        if (o instanceof BigDecimal) return (BigDecimal) o;
-        if (o instanceof Number) return BigDecimal.valueOf(((Number) o).doubleValue());
+        if (o == null)
+            return BigDecimal.ZERO;
+        if (o instanceof BigDecimal)
+            return (BigDecimal) o;
+        if (o instanceof Number)
+            return BigDecimal.valueOf(((Number) o).doubleValue());
         return new BigDecimal(o.toString());
     }
 }

@@ -31,11 +31,11 @@ A documentação detalhada está em [`/docs`](./docs).
 
 | Otimização | Produtos |
 |---|---|
-| ![Tela de Otimização](./docs/images/Industrial_Optimizer.png) | ![Tela de Produtos](./docs/images/produtos.png) |
+| ![Tela de Otimização](./docs/imagens/Industrial_Optimizer.pdf) | ![Tela de Produtos](./docs/imagens/produtos.pdf) |
 
 | Insumos | Composição |
 |---|---|
-| ![Tela de Insumos](./docs/images/insumos.png) | ![Tela de Composição](./docs/images/composição_dos_produtos.png) |
+| ![Tela de Insumos](./docs/imagens/insumos.pdf) | ![Tela de Composição](./docs/imagens/composição_dos_produtos.pdf) |
 
 ---
 

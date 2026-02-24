@@ -39,7 +39,7 @@
           <LimitationAlert v-if="result.limitations.length > 0" :items="result.limitations" />
 
           <div class="card-label" style="margin-bottom: 16px">Plano de Produção Recomendado</div>
-          <div class="production-grid">
+          <div class="production-grid md:grid-cols-2">
             <ProductionCard
               v-for="item in result.items"
               :key="item.id"
@@ -97,6 +97,7 @@ const products = ref([]);
 const result = ref(null);
 const isLoading = ref(false);
 const error = ref(null);
+const stockConsumption = ref([]);
 
 // ─── Carregar dados iniciais ao montar a view ───────────────────────────
 onMounted(async () => {
@@ -190,6 +191,7 @@ async function calculateOptimization() {
   try {
     const suggest = await api.getOptimization();
     result.value = buildResultFromSuggest(suggest, products.value);
+    await recomputeStockConsumption();
   } catch (e) {
     error.value = e.message || 'Erro ao calcular otimização.';
   } finally {
@@ -197,24 +199,35 @@ async function calculateOptimization() {
   }
 }
 
-// Consumo de estoque pelo plano (para as barras)
-const stockConsumption = computed(() => {
-  if (!result.value) return [];
+/**
+ * Recalcula o consumo de estoque usando o endpoint de composição (DTO)
+ * para evitar depender de entidades JPA cruas no /api/products.
+ */
+async function recomputeStockConsumption() {
+  if (!result.value) {
+    stockConsumption.value = [];
+    return;
+  }
 
   const consumed = {};
-  for (const item of result.value.items) {
-    if (!item.canProduce) continue;
-    const product = products.value.find((p) => p.id === item.id);
-    if (!product?.compositions) continue;
-    for (const comp of product.compositions) {
-      const name = comp.rawMaterial?.name;
+  const producedItems = result.value.items.filter((i) => i.canProduce);
+
+  // Busca as composições (DTO) para cada produto produzido
+  const compositionsByProduct = await Promise.all(
+    producedItems.map((item) => api.getComposition(item.id))
+  );
+
+  producedItems.forEach((item, index) => {
+    const comps = compositionsByProduct[index] || [];
+    for (const comp of comps) {
+      const name = comp.rawMaterialName;
       if (!name) continue;
       const qty = Number(comp.quantityNeeded) * item.quantity;
       consumed[name] = (consumed[name] || 0) + qty;
     }
-  }
+  });
 
-  return Object.entries(consumed)
+  stockConsumption.value = Object.entries(consumed)
     .map(([name, qty]) => {
       const mat = materials.value.find((m) => m.name === name);
       const original = mat ? Number(mat.stockQuantity) : 1;
@@ -222,5 +235,5 @@ const stockConsumption = computed(() => {
       return { name, pct };
     })
     .sort((a, b) => b.pct - a.pct);
-});
+}
 </script>

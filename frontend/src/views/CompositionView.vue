@@ -5,98 +5,92 @@
     </div>
 
     <div v-if="error" class="limitation-card">
-      <div class="limitation-header">Erro</div>
+      <div class="limitation-header">Atenção</div>
       <div class="limitation-item">{{ error }}</div>
     </div>
 
-    <div v-for="p in products" :key="p.id" class="card" style="margin-bottom: 16px">
+    <div v-for="p in products" :key="p.id" class="card" style="margin-bottom: 24px">
       <div class="card-label" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <span>{{ p.name }} · {{ formatCurrency(p.saleValue) }}</span>
-        <button type="button" class="add-btn" @click="openAdd(p)">+ Adicionar à receita</button>
+        <span style="font-size: 18px; color: var(--white)">
+          {{ p.name }} <span style="color: var(--oak); margin: 0 8px">·</span> {{ formatCurrency(p.saleValue) }}
+        </span>
+        <button type="button" class="add-btn" @click="openAdd(p)">+ ADICIONAR À RECEITA</button>
       </div>
-      <table class="crud-table">
+
+      <table class="crud-table" v-if="p.compositions && p.compositions.length">
         <thead>
           <tr>
-            <th>Matéria-prima</th>
-            <th>Quantidade necessária</th>
-            <th>Unidade</th>
-            <th>Custo no produto</th>
-            <th>Ações</th>
+            <th>MATÉRIA-PRIMA</th>
+            <th>QTD. NECESSÁRIA</th>
+            <th>UNIDADE</th>
+            <th>CUSTO NO PRODUTO</th>
+            <th style="text-align: right">AÇÕES</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="c in (p.compositions || [])" :key="c.rawMaterial?.id ?? c.id?.rawMaterialId">
-            <td class="td-name">{{ c.rawMaterial?.name ?? '—' }}</td>
-            <td class="td-mono">{{ c.quantityNeeded }}</td>
-            <td><span class="unit-pill">{{ c.rawMaterial?.unitMeasure ?? '—' }}</span></td>
-            <td class="td-value" style="font-size: 14px">{{ formatCurrency(costInProduct(c)) }}</td>
-            <td>
+          <tr v-for="c in p.compositions" :key="c.rawMaterialId">
+  <td class="td-name">{{ c.rawMaterialName }}</td>
+  <td class="td-mono">{{ c.quantityNeeded }}</td>
+  <td><span class="unit-pill">{{ c.rawMaterialUnitMeasure }}</span></td>
+  <td class="td-value">{{ formatCurrency(c.totalCost) }}</td>
+
+
+            <td style="text-align: right">
               <button type="button" class="action-btn" @click="openEdit(p, c)" title="Editar">✎</button>
               <button type="button" class="action-btn danger" @click="confirmDelete(p, c)" title="Excluir">✕</button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-if="!p.compositions?.length" style="padding: 16px 0; color: var(--ash); font-size: 13px;">Nenhuma composição cadastrada. Use "Adicionar à receita" para criar.</p>
+
+      <p v-else style="padding: 24px 0; color: var(--ash); font-size: 14px; text-align: center; border: 1px dashed var(--charcoal-soft); border-radius: 8px;">
+        Nenhuma composição cadastrada para este produto.
+      </p>
     </div>
 
-    <p v-if="products.length === 0 && !loading" style="color: var(--ash);">Nenhum produto cadastrado. Cadastre um produto na aba Produtos primeiro.</p>
-
-    <!-- Modal Nova composição -->
-    <div v-if="showModal === 'add'" class="modal-overlay" @click.self="showModal = null">
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal-box">
-        <h2 class="modal-title">Adicionar à receita</h2>
-        <p v-if="formProduct" style="color: var(--fog); margin-bottom: 16px; font-size: 13px;">Produto: <strong>{{ formProduct.name }}</strong></p>
-        <form @submit.prevent="saveComposition">
-          <div class="form-group">
-            <label>Matéria-prima</label>
+        <h2 class="modal-title">{{ showModal === 'add' ? 'Adicionar à Receita' : 'Editar Quantidade' }}</h2>
+        <p style="color: var(--fog); margin-bottom: 20px; font-size: 13px;">
+          Produto: <strong style="color: var(--oak)">{{ formProduct?.name }}</strong>
+          <span v-if="showModal === 'edit'"> <br> Insumo: <strong>{{ formMaterialName }}</strong></span>
+        </p>
+
+        <form @submit.prevent="showModal === 'add' ? saveComposition() : updateComposition()">
+          <div class="form-group" v-if="showModal === 'add'">
+            <label>SELECIONE O INSUMO</label>
             <select v-model.number="form.rawMaterialId" required class="form-select">
-              <option value="">Selecione o insumo</option>
-              <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.name }} ({{ m.unitMeasure }})</option>
+              <option value="" disabled>Escolha uma matéria-prima...</option>
+              <option v-for="m in materials" :key="m.id" :value="m.id">
+                {{ m.name }} ({{ m.unitMeasure }})
+              </option>
             </select>
           </div>
+
           <div class="form-group">
-            <label>Quantidade necessária</label>
-            <input v-model.number="form.quantityNeeded" type="number" step="0.001" min="0.001" required placeholder="Ex: 2.5" />
+            <label>QUANTIDADE NECESSÁRIA</label>
+            <input v-model.number="form.quantityNeeded" type="number" step="0.001" min="0.001" required placeholder="0.000" />
           </div>
+
           <div class="modal-actions">
-            <button type="button" class="btn-cancel" @click="showModal = null">Cancelar</button>
-            <button type="submit" class="btn-save">Adicionar</button>
+            <button type="button" class="btn-cancel" @click="closeModal">CANCELAR</button>
+            <button type="submit" class="btn-save">
+              {{ showModal === 'add' ? 'ADICIONAR' : 'SALVAR ALTERAÇÕES' }}
+            </button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Modal Editar quantidade -->
-    <div v-if="showModal === 'edit'" class="modal-overlay" @click.self="showModal = null">
-      <div class="modal-box">
-        <h2 class="modal-title">Editar quantidade</h2>
-        <p style="color: var(--fog); margin-bottom: 16px; font-size: 13px;">
-          {{ formProduct?.name }} · {{ formMaterial?.name }}
-        </p>
-        <form @submit.prevent="updateComposition">
-          <div class="form-group">
-            <label>Quantidade necessária</label>
-            <input v-model.number="form.quantityNeeded" type="number" step="0.001" min="0.001" required />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-cancel" @click="showModal = null">Cancelar</button>
-            <button type="submit" class="btn-save">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Confirmação exclusão -->
     <div v-if="deleting" class="modal-overlay" @click.self="deleting = null">
       <div class="modal-box">
-        <h2 class="modal-title">Remover da receita?</h2>
+        <h2 class="modal-title">Remover Insumo?</h2>
         <p style="color: var(--fog); margin-bottom: 24px;">
-          {{ deleting.productName }} — {{ deleting.materialName }}. Esta ação não pode ser desfeita.
+          Deseja remover <strong>{{ deleting.materialName }}</strong> da receita de <strong>{{ deleting.productName }}</strong>?
         </p>
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" @click="deleting = null">Cancelar</button>
-          <button type="button" class="btn-save" style="background: var(--danger);" @click="doDelete">Remover</button>
+          <button type="button" class="btn-cancel" @click="deleting = null">CANCELAR</button>
+          <button type="button" class="btn-save" style="background: var(--danger);" @click="doDelete">REMOVER</button>
         </div>
       </div>
     </div>
@@ -111,26 +105,19 @@ const products = ref([]);
 const materials = ref([]);
 const loading = ref(false);
 const error = ref(null);
-const showModal = ref(null); // 'add' | 'edit' | null
+const showModal = ref(null);
 const deleting = ref(null);
+const formProduct = ref(null);
+const formMaterialName = ref('');
 
 const form = ref({
   productId: null,
-  rawMaterialId: null,
-  quantityNeeded: 0.001,
+  rawMaterialId: '',
+  quantityNeeded: 1,
 });
 
-const formProduct = ref(null);
-const formMaterial = ref(null);
-
 function formatCurrency(v) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v));
-}
-
-function costInProduct(comp) {
-  const qty = Number(comp.quantityNeeded);
-  const cost = comp.rawMaterial ? Number(comp.rawMaterial.unitCost) : 0;
-  return qty * cost;
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v || 0));
 }
 
 async function load() {
@@ -138,10 +125,17 @@ async function load() {
   loading.value = true;
   try {
     const [prods, mats] = await Promise.all([api.getProducts(), api.getMaterials()]);
+    
+    // Busca composições via DTO para cada produto
+    for (let p of prods) {
+      p.compositions = await api.getComposition(p.id);
+    }
+    
     products.value = prods;
     materials.value = mats;
   } catch (e) {
-    error.value = e.message || 'Falha ao carregar dados.';
+    error.value = "Erro de conexão com o servidor. Verifique se o Backend está rodando na porta 8080.";
+    console.error(e);
   } finally {
     loading.value = false;
   }
@@ -149,73 +143,65 @@ async function load() {
 
 function openAdd(product) {
   formProduct.value = product;
-  form.value = { productId: product.id, rawMaterialId: '', quantityNeeded: 0.001 };
+  form.value = { productId: product.id, rawMaterialId: '', quantityNeeded: 1 };
   showModal.value = 'add';
 }
 
-function openEdit(product, composition) {
-  const rawMaterial = composition.rawMaterial;
-  if (!rawMaterial) return;
+function openEdit(product, comp) {
   formProduct.value = product;
-  formMaterial.value = rawMaterial;
+  formMaterialName.value = comp.rawMaterialName; // Usa o nome direto do DTO
   form.value = {
-    productId: product.id,
-    rawMaterialId: rawMaterial.id,
-    quantityNeeded: Number(composition.quantityNeeded),
+    productId: comp.productId,
+    rawMaterialId: comp.rawMaterialId,
+    quantityNeeded: comp.quantityNeeded
   };
   showModal.value = 'edit';
 }
 
-async function saveComposition() {
+function closeModal() {
+  showModal.value = null;
+  formProduct.value = null;
   error.value = null;
+}
+
+async function saveComposition() {
   try {
-    await api.createComposition({
-      productId: form.value.productId,
-      rawMaterialId: form.value.rawMaterialId,
-      quantityNeeded: form.value.quantityNeeded,
-    });
-    showModal.value = null;
-    formProduct.value = null;
+    await api.createComposition(form.value);
+    closeModal();
     await load();
   } catch (e) {
-    error.value = e.message || 'Falha ao adicionar à receita.';
+    error.value = e.message.includes('409') ? "Este insumo já faz parte desta receita." : e.message;
   }
 }
 
 async function updateComposition() {
-  error.value = null;
   try {
     await api.updateComposition(form.value.productId, form.value.rawMaterialId, {
-      quantityNeeded: form.value.quantityNeeded,
+      quantityNeeded: form.value.quantityNeeded
     });
-    showModal.value = null;
-    formProduct.value = null;
-    formMaterial.value = null;
+    closeModal();
     await load();
   } catch (e) {
-    error.value = e.message || 'Falha ao atualizar.';
+    error.value = "Erro ao atualizar quantidade.";
   }
 }
 
-function confirmDelete(product, composition) {
-  const rawMaterial = composition.rawMaterial;
+function confirmDelete(product, comp) {
   deleting.value = {
-    productId: product.id,
-    rawMaterialId: rawMaterial?.id,
+    productId: comp.productId,
+    rawMaterialId: comp.rawMaterialId,
     productName: product.name,
-    materialName: rawMaterial?.name ?? '—',
+    materialName: comp.rawMaterialName // Usa o nome direto do DTO
   };
 }
 
 async function doDelete() {
-  if (!deleting.value) return;
-  error.value = null;
   try {
     await api.deleteComposition(deleting.value.productId, deleting.value.rawMaterialId);
     deleting.value = null;
     await load();
   } catch (e) {
-    error.value = e.message || 'Falha ao remover.';
+    error.value = "Erro ao remover item.";
   }
 }
 
@@ -232,13 +218,18 @@ onMounted(load);
   font-size: 14px;
   color: var(--linen);
   font-family: 'Sora', sans-serif;
-}
-.form-select:focus {
-  outline: none;
-  border-color: var(--oak);
+  cursor: pointer;
 }
 .form-select option {
-  background: var(--charcoal-mid);
-  color: var(--linen);
+  background: #2c2c2c;
+  color: white;
+}
+.unit-pill {
+  background: var(--charcoal-soft);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--fog);
 }
 </style>

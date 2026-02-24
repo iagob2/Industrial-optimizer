@@ -50,7 +50,10 @@ export const api = {
   createMaterial: (body) => fetchWithMethod('/api/raw-materials', 'POST', body),
   updateMaterial: (id, body) => fetchWithMethod(`/api/raw-materials/${id}`, 'PUT', body),
   deleteMaterial: (id) => fetchWithMethod(`/api/raw-materials/${id}`, 'DELETE'),
-  getCompositions: (productId) => fetchJson(`/api/product-compositions?productId=${productId}`),
+  // DTO (achatado) — precisa enviar productId via query string
+  getComposition: (productId) => fetchJson('/api/product-compositions?productId=' + productId),
+  // Mantido por compatibilidade interna (se algum lugar ainda chamar no plural)
+  getCompositions: (productId) => fetchJson('/api/product-compositions?productId=' + productId),
   createComposition: (body) => fetchWithMethod('/api/product-compositions', 'POST', body),
   updateComposition: (productId, rawMaterialId, body) =>
     fetchWithMethod(`/api/product-compositions/${productId}/${rawMaterialId}`, 'PUT', body),
